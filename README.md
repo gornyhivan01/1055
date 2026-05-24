@@ -104,4 +104,66 @@ python -m pytest test_app.py -v
 ---
 
 Проект полностью рабочий, модульный и готов к демонстрации 💯
+
+## 🔄 Автоматическое тестирование (CI/CD)
+
+При каждом изменении кода и создании **Pull Request в ветку `main`** запускается автоматическое тестирование с помощью **GitHub Actions**.
+
+### 📦 Что проверяется
+- ✅ Запуск юнит-тестов для `worker` и `backend`
+- ✅ Проверка покрытия кода тестами
+- ✅ Установка зависимостей из `requirements.txt`
+- ✅ Контроль качества: если покрытие < 80% — тесты падают
+
+### 🛠 Конфигурация
+Файл: `.github/workflows/test.yml`
+
+```yaml
+name: Run Backend and Worker Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - name: Worker
+            path: worker
+            requirements: worker/requirements.txt
+            test: test_tasks.py
+            cov: tasks
+          - name: Backend
+            path: backend
+            requirements: backend/requirements.txt
+            test: test_app.py
+            cov: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -r ${{ matrix.component.requirements }}
+
+      - name: Run tests
+        run: |
+          cd ${{ matrix.component.path }} && \
+          PYTHONPATH=. python -m pytest ${{ matrix.component.test }} -v \
+            --cov=${{ matrix.component.cov }} \
+            --cov-report=term \
+            --cov-fail-under=80
+
+
 #
