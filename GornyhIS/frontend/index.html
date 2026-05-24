@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>URL Checker</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 50px auto; text-align: center; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        select, input, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        input { width: 60%; }
+        button { cursor: pointer; }
+        #result { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Проверка доступности сайтов</h2>
+    <div class="input-group">
+        <select id="protocol">
+            <option value="https">https://</option>
+            <option value="http">http://</option>
+        </select>
+        <input type="text" id="urlInput" placeholder="example.com">
+    </div>
+    <button onclick="checkUrl()">Проверить</button>
+    <div id="result"></div>
+
+    <script>
+        async function checkUrl() {
+            const protocol = document.getElementById('protocol').value;
+            const domain = document.getElementById('urlInput').value.trim();
+            const resDiv = document.getElementById('result');
+
+            if (!domain) {
+                resDiv.innerText = "Введите адрес сайта!";
+                return;
+            }
+
+            // Собираем полный URL
+            const url = `${protocol}://${domain}`;
+            resDiv.innerText = "Отправка задачи...";
+
+            // 1. Отправляем URL на бэкенд
+            const response = await fetch('/api/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (response.status !== 202) {
+                resDiv.innerText = `Ошибка: ${data.error}`;
+                return;
+            }
+
+            // 2. Опрашиваем статус задачи
+            const interval = setInterval(async () => {
+                const statusRes = await fetch(`/api/status/${data.task_id}`);
+                const statusData = await statusRes.json();
+
+                if (statusData.status === 'SUCCESS') {
+                    clearInterval(interval);
+                    const r = statusData.result;
+                    if (r.online) {
+                        resDiv.innerHTML = `✅ Доступен<br>Статус: ${r.status}<br>IP: ${r.ip}`;
+                    } else {
+                        resDiv.innerHTML = `❌ Недоступен<br><small>${r.error || 'Неизвестная ошибка'}</small>`;
+                    }
+                } else if (statusData.status === 'FAILURE') {
+                    clearInterval(interval);
+                    resDiv.innerText = `❌ Ошибка выполнения задачи`;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
