@@ -44,7 +44,6 @@
                 return;
             }
 
-            // Собираем полный URL
             const url = `${protocol}://${domain}`;
             resDiv.innerText = "Отправка задачи...";
 
@@ -55,10 +54,17 @@
                 body: JSON.stringify({ url: url })
             });
 
+            // ✅ Принимаем 200 и 202
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                resDiv.innerText = `Ошибка: ${errorData.error || 'Сервер вернул ${response.status}'}`;
+                return;
+            }
+
             const data = await response.json();
 
-            if (response.status !== 202) {
-                resDiv.innerText = `Ошибка: ${data.error}`;
+            if (!data.task_id) {
+                resDiv.innerText = "Ошибка: нет task_id в ответе";
                 return;
             }
 
