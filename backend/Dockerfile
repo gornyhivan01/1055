@@ -1,14 +1,10 @@
-FROM python:3.11-slim
+FROM python:3.11
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем зависимости и устанавливаем их
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Копируем исходный код
-COPY *.py .
+COPY app.py /app/app.py
 
-# Запускаем через Gunicorn (WSGI)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000"]

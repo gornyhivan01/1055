@@ -43,3 +43,10 @@ def test_get_status(mock_celery, client):
     assert data['status'] == 'SUCCESS'
     assert data['result'] is True
     mock_celery.AsyncResult.assert_called_once_with('test-task-id')
+
+
+def test_metrics_endpoint(client):
+    response = client.get('/metrics')
+    assert response.status_code == 200
+    assert 'text/plain' in response.headers['Content-Type']
+    assert 'user_requests_total' in response.get_data(as_text=True)
