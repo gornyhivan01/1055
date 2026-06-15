@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 celery = Celery('tasks', broker=os.getenv('REDIS_URL'), backend=os.getenv('REDIS_URL'))
 
+
 @celery.task(name='tasks.check_availability')
 def check_availability(url):
     try:
