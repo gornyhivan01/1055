@@ -16,7 +16,7 @@ def check_availability(url):
         # Получаем IP по домену
         ip = socket.gethostbyname(domain)
 
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=15)
         return {
             "url": url,
             "ip": ip,
